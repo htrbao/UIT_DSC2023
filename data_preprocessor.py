@@ -82,7 +82,7 @@ def preprocess(file_name, output_name, is_test:bool = False):
 
     examples = []
 
-    with futures.ProcessPoolExecutor(max_workers=10) as executor:
+    with futures.ProcessPoolExecutor(max_workers=5) as executor:
         fs = [executor.submit(preprocess_item, data['ids'][idx], data['claims'][idx], data['contexts'][idx], data['labels'][idx])\
             for idx in tqdm(range(len(data['ids'])))]
     
