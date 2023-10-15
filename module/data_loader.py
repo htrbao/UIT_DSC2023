@@ -186,13 +186,15 @@ class DataEngine(Dataset):
         return len(self.datas)
 
     def __getitem__(self, idx):
-        return self.vectorize(self.datas[idx]['context'],
-                              self.datas[idx]['pos'],
-                              self.datas[idx]['ner'],
-                              self.datas[idx]['q'],
-                              len(self.datas[idx]['context']) if len(self.datas[idx]['answers']) == 0 else self.datas[idx]['answers'][0][0],#ans_start
-                              len(self.datas[idx]['context']) if len(self.datas[idx]['answers']) == 0 else self.datas[idx]['answers'][0][1],#ans_end
-                              self.datas[idx]['appear'])
+        return self.vectorize(self.datas['ids'][idx],
+                              self.datas['claims'][idx],
+                              self.datas['h_poses'][idx],
+                              self.datas['h_ners'][idx],
+                              self.datas['contexts'][idx],
+                              self.datas['c_poses'][idx],
+                              self.datas['c_ners'][idx],
+                              self.datas['labels'][idx]
+                              )
                               # '''-1 if len(self.datas[idx]['answers']) == 0 else '''
                               
                               # '''-1 if len(self.datas[idx]['answers']) == 0 else '''

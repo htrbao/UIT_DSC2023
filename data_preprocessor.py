@@ -72,6 +72,16 @@ def preprocess_item(idx, claim, context, verdict:str = None):
         c_ner= c_ner,
     )
 
+def ner_pos(claim: str):
+    """
+    Return pos before ner
+    """
+    token = ner(claim)
+    token = np.transpose(token)
+    token = [list(_) for _ in token]
+    
+    return token[1], token[3]
+
 def preprocess(file_name, output_name, is_test:bool = False):
     print(file_name)
 
@@ -107,9 +117,26 @@ def preprocess(file_name, output_name, is_test:bool = False):
         json.dump(examples, outfile)
 
     print('End write %s'%(output_name))
-        
 
+def add_pos_ner4claim(data_file_name, preprocessed_file_name, output_name, is_test:bool = False):
+    print(data_file_name)
 
+    data = load(data_file_name, is_test)
+    examples = json.load(open(preprocessed_file_name, 'r', encoding='utf8'))
+
+    examples['h_ners'] = []
+    examples['h_poses'] = []
+    
+    for idx in tqdm(range(len(examples['ids']))):
+        h_pos, h_ner = ner_pos(data['claims'][idx])
+        examples['h_ners'].append(h_pos)
+        examples['h_poses'].append(h_ner)
+    
+    print('Begin write %s'%(output_name))
+    with open(output_name, "w", encoding='utf8') as outfile:
+        json.dump(examples, outfile)
+
+    print('End write %s'%(output_name))
 
 if __name__ == '__main__':
     #preprocess_ch('CQA_data/train-v1.1.json', 'train.json')
@@ -117,5 +144,12 @@ if __name__ == '__main__':
 
     # load_squad('UIT-ViQuAD 2.0/train.json')
 
-    preprocess('ise-dsc01/ise-dsc01-train.json', 'ise-dsc01/data_preprocessed/train.json')
-    preprocess('ise-dsc01/ise-dsc01-public-test-offcial.json', 'ise-dsc01/data_preprocessed/public_test.json', True)
+    # preprocess('ise-dsc01/ise-dsc01-train.json', 'ise-dsc01/data_preprocessed/train.json')
+    # preprocess('ise-dsc01/ise-dsc01-public-test-offcial.json', 'ise-dsc01/data_preprocessed/public_test.json', True)
+
+    # add_pos_ner4claim('ise-dsc01/ise-dsc01-train.json', 'ise-dsc01/data_preprocessed/train.json', 'ise-dsc01/data_preprocessed/train_claim_ner_pos.json')
+    # add_pos_ner4claim('ise-dsc01/ise-dsc01-public-test-offcial.json', 'ise-dsc01/data_preprocessed/public_test.json', 'ise-dsc01/data_preprocessed/public_test_claim_ner_pos.json', True)
+
+    examples = json.load(open('ise-dsc01/data_preprocessed/train_claim_ner_pos.json', 'r', encoding='utf8'))
+    for k in examples.keys():
+        print(k, len(examples[k]))
