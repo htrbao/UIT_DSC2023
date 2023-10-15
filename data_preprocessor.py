@@ -20,7 +20,7 @@ def init(tokenizer_class, options):
     Finalize(TOK, TOK.shutdown, exitpriority=100)
 
 def load(file_name, is_test: bool = False):
-    data = json.load(open(file_name, 'r'))
+    data = json.load(open(file_name, 'r', encoding='utf8'))
     output = {'ids': [], 'claims': [],
               'contexts': [], 'labels': []}
     for id in data.keys():
@@ -80,20 +80,33 @@ def preprocess(file_name, output_name, is_test:bool = False):
     for k in data.keys():
         print(k, len(data[k]))
 
-    examples = []
+    examples = {
+        'ids': [],
+        'claims': [],
+        'contexts': [],
+        'c_poses': [],
+        'c_ners': [],
+        'labels': [],
+    }
+    for idx in tqdm(range(len(data['ids']))):
+        item = preprocess_item(data['ids'][idx],
+                                   data['claims'][idx],
+                                   data['contexts'][idx],
+                                   data['labels'][idx])
+        examples['ids'].append(item['id']) 
+        examples['claims'].append(item['claim'])
+        examples['contexts'].append(item['c_document'])
+        examples['c_poses'].append(item['c_pos'])
+        examples['c_ners'].append(item['c_ner'])
+        if data['labels'][idx] is not None:
+            examples['labels'].append(data['labels'][idx])
 
-    with futures.ProcessPoolExecutor(max_workers=5) as executor:
-        fs = [executor.submit(preprocess_item, data['ids'][idx], data['claims'][idx], data['contexts'][idx], data['labels'][idx])\
-            for idx in tqdm(range(len(data['ids'])))]
     
-        for future in futures.as_completed(fs):
-            # Every time a job submitted to the process pool completes we can
-            # look for more results:
-            result = future.result()
-            examples.append(result)
-                
-    print(len(examples))
+    print('Begin write %s'%(output_name))
+    with open(output_name, "w", encoding='utf8') as outfile:
+        json.dump(examples, outfile)
 
+    print('End write %s'%(output_name))
         
 
 
