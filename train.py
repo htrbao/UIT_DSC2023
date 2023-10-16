@@ -61,21 +61,16 @@ args = Arg()
 
 if __name__ == '__main__':
     torch.autograd.set_detect_anomaly(True)
-    train = load_data('/kaggle/input/vsquad/train_squad.json', args.word_base)[:15000]
-    test = load_data('/kaggle/input/vsquad/dev_squad.json', args.word_base)
+    train = load_data('/Users/lap60754/Documents/UIT_DSC2023/ise-dsc01/data_preprocessed/train_claim_ner_pos.json')
+    test = load_data('/Users/lap60754/Documents/UIT_DSC2023/ise-dsc01/data_preprocessed/public_test_claim_ner_pos.json')
     vocabulary, pad_lens = build_vocab(train, test, args.vocab_size)
-    embedding = vocabulary.build_embedding('/kaggle/input/phoword2vec-vi-words/word2vec_vi_words_300dims.txt', args.embedding_size)
-    print(embedding.shape)
-    print('Vocab size: %d | Max context: %d | Max question: %d'%(
+    # embedding = vocabulary.build_embedding('/kaggle/input/phoword2vec-vi-words/word2vec_vi_words_300dims.txt', args.embedding_size)
+    # print(embedding.shape)
+    print('Vocab size: %d | Max context: %d | Max claim: %d'%(
           len(vocabulary), pad_lens[0], pad_lens[1]))
-    valid, test = split_exp(test, 0.5)
-    print('Train: %d | Valid: %d | Test: %d'%(len(train), len(valid), len(test)))
+    # valid, test = split_exp(test, 0.5)
+    print('Train: %d | Test: %d'%(len(train['ids']), len(test['ids'])))
     train_engine = DataLoader(DataEngine(train, vocabulary, pad_lens),
-                              batch_size=args.batch_size,
-                              shuffle=True,
-                              num_workers=8,
-                              pin_memory=use_cuda)
-    valid_engine = DataLoader(DataEngine(valid, vocabulary, pad_lens),
                               batch_size=args.batch_size,
                               shuffle=True,
                               num_workers=8,
@@ -88,20 +83,17 @@ if __name__ == '__main__':
                        args.embedding_size)
     else:
         w2v = None
-    fusion_net = FusionNet(vocab_size=len(vocabulary),
-                           pos_size=vocabulary.pos_size(),
-                           pos_dim=args.pos_dim,
-                           ner_size=vocabulary.ner_size(),
-                           ner_dim=args.ner_dim,
-                           word_dim=args.embedding_size,
-                           hidden_size=args.hidden_size,
-                           rnn_layer=args.rnn_layer,
-                           dropout=args.dropout,
-                           pretrained_embedding=embedding)
+    # fusion_net = FusionNet(vocab_size=len(vocabulary),
+    #                        pos_size=vocabulary.pos_size(),
+    #                        pos_dim=args.pos_dim,
+    #                        ner_size=vocabulary.ner_size(),
+    #                        ner_dim=args.ner_dim,
+    #                        word_dim=args.embedding_size,
+    #                        hidden_size=args.hidden_size,
+    #                        rnn_layer=args.rnn_layer,
+    #                        dropout=args.dropout,
+    #                        pretrained_embedding=embedding)
 
     print("created netword...")
-
-    if use_cuda:
-        fusion_net = fusion_net.cuda()
     
     

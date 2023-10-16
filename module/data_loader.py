@@ -75,15 +75,15 @@ def split_exp(examples, ratio):
 
 def count_vocab(examples):
     vocab_count = Counter()
-    max_context, max_q = 0, 0 
-    for example in examples:
-        context = example['context']
-        q = example['q']
+    max_context, max_q = 0, 0
+    for idx in range(len(examples['ids'])):
+        context = examples['contexts'][idx]
+        claim = examples['claims'][idx]
         vocab_count.update(context)
-        vocab_count.update(q)
+        vocab_count.update(claim)
 
         max_context = max(max_context, len(context))
-        max_q = max(max_q, len(q))
+        max_q = max(max_q, len(claim))
 
     return vocab_count, (max_context + 1, max_q)
 
@@ -147,18 +147,22 @@ class Vocabulary:
         return emb
 
 def build_vocab(train, test, vocab_size):
-    vocab_count, pad_lens = count_vocab(train + test)
+    train_test = deepcopy(train)
+    for k in train_test.keys():
+        train_test[k].extend(test[k])
+    vocab_count, pad_lens = count_vocab(train_test)
     vocab = vocab_count.most_common()[:vocab_size]
     
     to_pos, to_ner = {}, {}
     to_pos['<PAD>'], to_pos['<UNK>'] = 0, 1
     to_ner['<PAD>'], to_ner['<UNK>'] = 0, 1
-    for x in train + test:
-        for tag in x['pos']:
+    
+    for idx in range(len(train_test['ids'])):
+        for tag in train_test['c_poses'][idx] + train_test['h_poses'][idx]:
             if tag not in to_pos.keys():
                 to_pos[tag] = len(to_pos)
         
-        for tag in x['ner']:
+        for tag in train_test['c_ners'][idx] + train_test['h_ners'][idx]:
             if tag not in to_ner.keys():
                 to_ner[tag] = len(to_ner)
     
