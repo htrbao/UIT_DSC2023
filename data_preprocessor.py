@@ -47,7 +47,7 @@ def preprocess_item(idx, claim, context, verdict:str = None):
     q_token = np.transpose(q_token)
     q_token = [list(_) for _ in q_token]
     #Tokenize token in claim
-    q_word = q_token[0]
+    q_word, q_pos, q_ner = q_token[0], q_token[1], q_token[3]
 
 
     c_token = ner(context)
@@ -59,6 +59,8 @@ def preprocess_item(idx, claim, context, verdict:str = None):
         return dict(
             id = idx,
             claim= q_word,
+            claim_pos= q_pos,
+            claim_ner= q_ner,
             c_document= c_word,
             c_pos= c_pos,
             c_ner= c_ner,
@@ -67,6 +69,8 @@ def preprocess_item(idx, claim, context, verdict:str = None):
     return dict(
         id = idx,
         claim= q_word,
+        claim_pos= q_pos,
+        claim_ner= q_ner,
         c_document= c_word,
         c_pos= c_pos,
         c_ner= c_ner,
@@ -85,31 +89,17 @@ def ner_pos(claim: str):
 def preprocess(file_name, output_name, is_test:bool = False):
     print(file_name)
 
-    data = load(file_name, is_test)
+    data = json.load(open(file_name, 'r', encoding='utf8'))
+
+    examples = {}
 
     for k in data.keys():
-        print(k, len(data[k]))
-
-    examples = {
-        'ids': [],
-        'claims': [],
-        'contexts': [],
-        'c_poses': [],
-        'c_ners': [],
-        'labels': [],
-    }
-    for idx in tqdm(range(len(data['ids']))):
-        item = preprocess_item(data['ids'][idx],
-                                   data['claims'][idx],
-                                   data['contexts'][idx],
-                                   data['labels'][idx])
-        examples['ids'].append(item['id']) 
-        examples['claims'].append(item['claim'])
-        examples['contexts'].append(item['c_document'])
-        examples['c_poses'].append(item['c_pos'])
-        examples['c_ners'].append(item['c_ner'])
-        if data['labels'][idx] is not None:
-            examples['labels'].append(data['labels'][idx])
+        item = preprocess_item(k,
+                                data[k]['claim'],
+                                data[k]['evidence_predict'],
+                                data[k]['verdict'])
+        examples[k] = item
+        
 
     
     print('Begin write %s'%(output_name))
@@ -144,12 +134,8 @@ if __name__ == '__main__':
 
     # load_squad('UIT-ViQuAD 2.0/train.json')
 
-    # preprocess('ise-dsc01/ise-dsc01-train.json', 'ise-dsc01/data_preprocessed/train.json')
+    preprocess('ise-dsc01/train.json', 'ise-dsc01/data_preprocessed/train.json')
     # preprocess('ise-dsc01/ise-dsc01-public-test-offcial.json', 'ise-dsc01/data_preprocessed/public_test.json', True)
 
     # add_pos_ner4claim('ise-dsc01/ise-dsc01-train.json', 'ise-dsc01/data_preprocessed/train.json', 'ise-dsc01/data_preprocessed/train_claim_ner_pos.json')
     # add_pos_ner4claim('ise-dsc01/ise-dsc01-public-test-offcial.json', 'ise-dsc01/data_preprocessed/public_test.json', 'ise-dsc01/data_preprocessed/public_test_claim_ner_pos.json', True)
-
-    examples = json.load(open('ise-dsc01/data_preprocessed/train_claim_ner_pos.json', 'r', encoding='utf8'))
-    for k in examples.keys():
-        print(k, len(examples[k]))
