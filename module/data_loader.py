@@ -20,6 +20,7 @@ def load_data(file_name):
     Add other preprocessing?
     '''
     examples = json.load(open(file_name, 'r', encoding='utf8'))
+    examples['appears'] = []
     print(examples.keys())
     for idx in range(len(examples['ids'])):
         context = examples['contexts'][idx]
