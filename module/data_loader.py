@@ -189,15 +189,15 @@ class DataEngine(Dataset):
         return len(self.datas)
 
     def __getitem__(self, idx):
-        return self.vectorize(self.datas['ids'][idx],
-                              self.datas['claims'][idx],
-                              self.datas['h_poses'][idx],
-                              self.datas['h_ners'][idx],
-                              self.datas['contexts'][idx],
-                              self.datas['c_poses'][idx],
-                              self.datas['c_ners'][idx],
-                              self.datas['appears'][idx],
-                              self.datas['labels'][idx]
+        return self.vectorize(self.datas[idx]['id'],
+                              self.datas[idx]['claim'],
+                              self.datas[idx]['h_pose'],
+                              self.datas[idx]['h_ner'],
+                              self.datas[idx]['context'],
+                              self.datas[idx]['c_pose'],
+                              self.datas[idx]['c_ner'],
+                              self.datas[idx]['appear'],
+                              self.datas[idx]['verdict']
                               )
                               # '''-1 if len(self.datas[idx]['answers']) == 0 else '''
                               
