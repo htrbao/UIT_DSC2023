@@ -10,6 +10,11 @@ from copy import deepcopy
 
 PAD = 0
 UNK = 1
+verdict2num = {
+    'SUPPORTED': 0,
+    'REFUTED': 1,
+    'NEI': 2
+}
 
 def normalize_text(text):
     return unicodedata.normalize('NFD', text)
@@ -191,6 +196,7 @@ class DataEngine(Dataset):
                               self.datas['contexts'][idx],
                               self.datas['c_poses'][idx],
                               self.datas['c_ners'][idx],
+                              self.datas['appears'][idx],
                               self.datas['labels'][idx]
                               )
                               # '''-1 if len(self.datas[idx]['answers']) == 0 else '''
@@ -198,14 +204,16 @@ class DataEngine(Dataset):
                               # '''-1 if len(self.datas[idx]['answers']) == 0 else '''
                               
 
-    def vectorize(self, context, context_pos, context_ner, q, ans_start, ans_end, appear):
+    def vectorize(self, id, claim, h_pos, h_ner, context, c_pos, c_ner, appear, label):
         padding_context = ['<PAD>' for _ in range(self.pad_context - len(context))]
         context = context + padding_context
-        context_pos = context_pos + padding_context
-        context_ner = context_ner + padding_context
+        context_pos = c_pos + padding_context
+        context_ner = c_ner + padding_context
 
-        padding_q = ['<PAD>' for _ in range(self.pad_q - len(q))]
-        q = q + padding_q
+        padding_claim = ['<PAD>' for _ in range(self.pad_q - len(claim))]
+        claim = claim + padding_claim
+        claim_pos = h_pos + padding_claim
+        claim_ner = h_ner
 
         padding_appear = [0 for _ in range(self.pad_context - len(appear))]
         appear = appear + padding_appear
@@ -213,10 +221,13 @@ class DataEngine(Dataset):
         context = torch.LongTensor(self.vocabulary.word2idx(context))
         context_pos = torch.LongTensor(self.vocabulary.pos2idx(context_pos))
         context_ner = torch.LongTensor(self.vocabulary.ner2idx(context_ner))
-        q = torch.LongTensor(self.vocabulary.word2idx(q))
-        ans_offset = torch.LongTensor([ans_start, ans_end])
+        claim = torch.LongTensor(self.vocabulary.word2idx(claim))
+        claim_pos = torch.LongTensor(self.vocabulary.pos2idx(claim_pos))
+        claim_ner = torch.LongTensor(self.vocabulary.ner2idx(claim_ner))
         appear = torch.FloatTensor(appear)
-        return context, context_pos, context_ner, q, ans_offset, appear
+        label = torch.LongTensor([verdict2num[label]])
+
+        return id, context, context_pos, context_ner, claim, claim_pos, claim_ner, appear, label
     
 # if __name__ == "__main__":
 #     train = load_data('/kaggle/input/squad1k/train_squad.json', False)
