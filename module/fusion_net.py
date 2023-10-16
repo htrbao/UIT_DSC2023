@@ -9,7 +9,8 @@ class FusionNet(nn.Module):
         super(FusionNet, self).__init__()
 
         # Input size to RNN: word emb + char emb + question emb + manual features
-        input_size = 0
+        P_input_size = 0
+        H_input_size = 0
 
         layers.set_my_dropout_prob(opt['my_dropout_p'])
         layers.set_seq_dropout(opt['do_seq_dropout'])
@@ -32,30 +33,32 @@ class FusionNet(nn.Module):
                 self.register_buffer('fixed_embedding', fixed_embedding)
                 self.fixed_embedding = fixed_embedding
         embedding_dim = opt['embedding_dim']
-        input_size += embedding_dim
+        P_input_size += embedding_dim
+        H_input_size += embedding_dim
         # Contextualized embeddings
-        input_size += self.CoVe.output_size
+        # input_size += self.CoVe.output_size
         # POS embeddings
         self.pos_embedding = nn.Embedding(opt['pos_size'], opt['pos_dim'])
-        input_size += opt['pos_dim']
+        P_input_size += opt['pos_dim']
+        H_input_size += opt['pos_dim']
         # NER embeddings
         self.ner_embedding = nn.Embedding(opt['ner_size'], opt['ner_dim'])
-        input_size += opt['ner_dim']
+        P_input_size += opt['ner_dim']
+        H_input_size += opt['ner_dim']
 
-        if opt['full_att_type'] == 2:
-            aux_input = opt['num_features']
-        else:
-            aux_input = 1
+        P_input_size += 1
 
         # Setup the vector size for [premise, hypothesis]
         # they will be modified in the following code
-        cur_hidden_size = input_size
-        print('Initially, the vector_size is {} (+ {})'.format(cur_hidden_size, aux_input))
+        P_cur_hidden_size = P_input_size
+        H_cur_hidden_size = H_input_size
+        print('Initially, the vector_size of Context is {} (+ {})'.format(P_cur_hidden_size))
+        print('Initially, the vector_size of Claim is {} (+ {})'.format(H_cur_hidden_size))
 
         # RNN premise encoder
-        self.P_rnn = layers.RNNEncoder(cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'], aux_size = aux_input)
+        self.P_rnn = layers.RNNEncoder(P_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'])
         # RNN hypothesis encoder
-        self.H_rnn = layers.RNNEncoder(cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'], aux_size = aux_input)
+        self.H_rnn = layers.RNNEncoder(H_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'])
         cur_hidden_size = opt['hidden_size'] * 2
 
         # Output sizes of rnn encoders
@@ -66,12 +69,12 @@ class FusionNet(nn.Module):
             self.full_attn_P = layers.FullAttention(cur_hidden_size, cur_hidden_size, 1)
             self.full_attn_H = layers.FullAttention(cur_hidden_size, cur_hidden_size, 1)
         elif opt['full_att_type'] == 1:
-            self.full_attn_P = layers.FullAttention(input_size + opt['enc_rnn_layers'] * cur_hidden_size, cur_hidden_size, 1)
-            self.full_attn_H = layers.FullAttention(input_size + opt['enc_rnn_layers'] * cur_hidden_size, cur_hidden_size, 1)
+            self.full_attn_P = layers.FullAttention(P_input_size + opt['enc_rnn_layers'] * cur_hidden_size, cur_hidden_size, 1)
+            self.full_attn_H = layers.FullAttention(H_input_size + opt['enc_rnn_layers'] * cur_hidden_size, cur_hidden_size, 1)
         elif opt['full_att_type'] == 2:
-            self.full_attn_P = layers.FullAttention(input_size + opt['enc_rnn_layers'] * cur_hidden_size,
+            self.full_attn_P = layers.FullAttention(P_input_size + opt['enc_rnn_layers'] * cur_hidden_size,
                                                     opt['enc_rnn_layers'] * cur_hidden_size, opt['enc_rnn_layers'])
-            self.full_attn_H = layers.FullAttention(input_size + opt['enc_rnn_layers'] * cur_hidden_size,
+            self.full_attn_H = layers.FullAttention(H_input_size + opt['enc_rnn_layers'] * cur_hidden_size,
                                                     opt['enc_rnn_layers'] * cur_hidden_size, opt['enc_rnn_layers'])
         else:
             raise NotImplementedError('full_att_type = %s' % opt['full_att_type'])
@@ -97,7 +100,7 @@ class FusionNet(nn.Module):
         # Store config
         self.opt = opt
 
-    def forward(self, x1, x1_f, x1_pos, x1_ner, x1_mask, x2, x2_f, x2_pos, x2_ner, x2_mask):
+    def forward(self, x1, x1_pos, x1_ner, x1_mask, x2, x2_pos, x2_ner, x2_mask, appear):
         """Inputs:
         x1 = premise word indices                [batch * len_1]
         x1_f = premise word features indices     [batch * len_1 * nfeat]
@@ -145,6 +148,8 @@ class FusionNet(nn.Module):
         Prnn_input_list.append(x1_ner_emb)
         Hrnn_input_list.append(x2_ner_emb)
 
+        Prnn_input_list.append(appear)
+
         x1_input = torch.cat(Prnn_input_list, 2)
         x2_input = torch.cat(Hrnn_input_list, 2)
 
@@ -154,16 +159,17 @@ class FusionNet(nn.Module):
 
         if self.opt['full_att_type'] == 2:
             x1_f = layers.dropout(x1_f, p=self.opt['dropout_EM'], training=self.training)
-            x2_f = layers.dropout(x2_f, p=self.opt['dropout_EM'], training=self.training)
-            Paux_input, Haux_input = x1_f, x2_f
+            # x2_f = layers.dropout(x2_f, p=self.opt['dropout_EM'], training=self.training)
+            # Paux_input, Haux_input = x1_f, x2_f
+            Paux_input = x1_f
         else:
             Paux_input = x1_f[:, :, 0].contiguous().view(x1_f.size(0), x1_f.size(1), 1)
-            Haux_input = x2_f[:, :, 0].contiguous().view(x2_f.size(0), x2_f.size(1), 1)
+            # Haux_input = x2_f[:, :, 0].contiguous().view(x2_f.size(0), x2_f.size(1), 1)
 
         # Encode premise with RNN
         P_abstr_ls = self.P_rnn(x1_input, x1_mask, aux_input=Paux_input)
         # Encode hypothesis with RNN
-        H_abstr_ls = self.H_rnn(x2_input, x2_mask, aux_input=Haux_input)
+        H_abstr_ls = self.H_rnn(x2_input, x2_mask, aux_input=None)
 
         # Fusion
         if self.opt['full_att_type'] == 0:
