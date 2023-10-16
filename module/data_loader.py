@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset
 from collections import Counter
 from tqdm import tqdm
+from copy import deepcopy
 
 
 PAD = 0
@@ -18,26 +19,18 @@ def load_data(file_name, word_base):
     load train, test file
     Add other preprocessing?
     '''
-    examples = json.load(open(file_name, 'r'))
-    print(examples[0].keys())
-    for idx in range(len(examples)):
-        if word_base:
-            context = examples[idx]['context_token']
-            q = examples[idx]['q_token']
-        else:
-            context = list(examples[idx]['document'])
-            q = list(examples[idx]['question'])
-            pos = list(examples[idx]['question'])
-        examples[idx]['context'] = context
-        examples[idx]['q'] = q
-        
+    examples = json.load(open(file_name, 'r', encoding='utf8'))
+    print(examples.keys())
+    for idx in range(len(examples['ids'])):
+        context = examples['contexts'][idx]
+        claim = examples['claims'][idx]
         appear = []
         for w in context:
-            if w in q:
+            if w in claim:
                 appear.append(1)
             else:
                 appear.append(0)
-        examples[idx]['appear'] = appear
+        examples['appears'].append(deepcopy(appear))
     return examples
 
 def load_embedding(data_path, to_idx, embedding_size):
