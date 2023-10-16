@@ -14,7 +14,7 @@ UNK = 1
 def normalize_text(text):
     return unicodedata.normalize('NFD', text)
 
-def load_data(file_name, word_base):
+def load_data(file_name):
     '''
     load train, test file
     Add other preprocessing?
