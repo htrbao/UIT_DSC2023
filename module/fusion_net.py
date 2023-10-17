@@ -52,8 +52,8 @@ class FusionNet(nn.Module):
         # they will be modified in the following code
         P_cur_hidden_size = P_input_size
         H_cur_hidden_size = H_input_size
-        print('Initially, the vector_size of Context is {} (+ {})'.format(P_cur_hidden_size))
-        print('Initially, the vector_size of Claim is {} (+ {})'.format(H_cur_hidden_size))
+        print('Initially, the vector_size of Context is {}'.format(P_cur_hidden_size))
+        print('Initially, the vector_size of Claim is {}'.format(H_cur_hidden_size))
 
         # RNN premise encoder
         self.P_rnn = layers.RNNEncoder(P_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'])
