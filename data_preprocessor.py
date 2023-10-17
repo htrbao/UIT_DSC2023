@@ -135,7 +135,9 @@ if __name__ == '__main__':
     # load_squad('UIT-ViQuAD 2.0/train.json')
 
     # preprocess('ise-dsc01/train.json', 'ise-dsc01/data_preprocessed/train.json')
-    preprocess('ise-dsc01/public_test.json', 'ise-dsc01/data_preprocessed/short_public_test.json', True)
+    # preprocess('ise-dsc01/public_test.json', 'ise-dsc01/data_preprocessed/short_public_test.json', True)
 
     # add_pos_ner4claim('ise-dsc01/ise-dsc01-train.json', 'ise-dsc01/data_preprocessed/train.json', 'ise-dsc01/data_preprocessed/train_claim_ner_pos.json')
     # add_pos_ner4claim('ise-dsc01/ise-dsc01-public-test-offcial.json', 'ise-dsc01/data_preprocessed/public_test.json', 'ise-dsc01/data_preprocessed/public_test_claim_ner_pos.json', True)
+    data = json.load(open('ise-dsc01/data_preprocessed/short_train.json', 'r', encoding='utf8'))
+    print(data['7125'])

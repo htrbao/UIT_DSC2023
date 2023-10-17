@@ -120,6 +120,7 @@ class Vocabulary:
     def word2idx(self, words):
         idxs = []
         for word in words:
+            word = word.lower()
             idxs.append(self.to_idx['<UNK>'] if word not in self.to_idx.keys() else self.to_idx[word])
         return idxs
     
@@ -204,7 +205,7 @@ class DataEngine(Dataset):
                               self.datas[idx]['c_pos'],
                               self.datas[idx]['c_ner'],
                               self.datas[idx]['appear'],
-                              self.datas[idx]['verdict']
+                              self.datas[idx]['label']
                               )
                               # '''-1 if len(self.datas[idx]['answers']) == 0 else '''
                               
