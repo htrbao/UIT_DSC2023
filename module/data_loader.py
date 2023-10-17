@@ -221,7 +221,7 @@ class DataEngine(Dataset):
         padding_claim = ['<PAD>' for _ in range(self.pad_q - len(claim))]
         claim = claim + padding_claim
         claim_pos = h_pos + padding_claim
-        claim_ner = h_ner
+        claim_ner = h_ner + padding_claim
 
         padding_appear = [0 for _ in range(self.pad_context - len(appear))]
         appear = appear + padding_appear
