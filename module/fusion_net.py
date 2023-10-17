@@ -46,15 +46,20 @@ class FusionNet(nn.Module):
         P_input_size += opt['ner_dim']
         H_input_size += opt['ner_dim']
 
+        if opt['full_att_type'] == 2:
+            aux_input = opt['num_features']
+        else:
+            aux_input = 1
+
         # Setup the vector size for [premise, hypothesis]
         # they will be modified in the following code
         P_cur_hidden_size = P_input_size
         H_cur_hidden_size = H_input_size
-        print('Initially, the vector_size of Context is {}'.format(P_cur_hidden_size))
-        print('Initially, the vector_size of Claim is {}'.format(H_cur_hidden_size))
+        print('Initially, the vector_size of Context is {} (+ {})'.format(P_cur_hidden_size, aux_input))
+        print('Initially, the vector_size of Claim is {} (+ {})'.format(H_cur_hidden_size, 0))
 
         # RNN premise encoder
-        self.P_rnn = layers.RNNEncoder(P_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'])
+        self.P_rnn = layers.RNNEncoder(P_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'], aux_size = aux_input)
         # RNN hypothesis encoder
         self.H_rnn = layers.RNNEncoder(H_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'])
         cur_hidden_size = opt['hidden_size'] * 2
