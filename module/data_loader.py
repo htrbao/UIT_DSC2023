@@ -24,19 +24,22 @@ def load_data(file_name):
     load train, test file
     Add other preprocessing?
     '''
-    examples = json.load(open(file_name, 'r', encoding='utf8'))
-    examples['appears'] = []
-    print(examples.keys())
-    for idx in range(len(examples['ids'])):
-        context = examples['contexts'][idx]
-        claim = examples['claims'][idx]
+    data = json.load(open(file_name, 'r', encoding='utf8'))
+    examples = []
+    for data_id in data.keys():
+        data_item = data[data_id]
+
+        context = data_item['c_document']
+        claim = data_item['claim']
         appear = []
         for w in context:
             if w in claim:
                 appear.append(1)
             else:
                 appear.append(0)
-        examples['appears'].append(deepcopy(appear))
+        data_item['appear'] = deepcopy(appear)
+
+        examples.append(data_item)
     return examples
 
 def load_embedding(data_path, to_idx, embedding_size):
@@ -80,15 +83,15 @@ def split_exp(examples, ratio):
 
 def count_vocab(examples):
     vocab_count = Counter()
-    max_context, max_q = 0, 0
-    for idx in range(len(examples['ids'])):
-        context = examples['contexts'][idx]
-        claim = examples['claims'][idx]
+    max_context, max_q = 0, 0 
+    for example in examples:
+        context = example['c_document']
+        q = example['claim']
         vocab_count.update(context)
-        vocab_count.update(claim)
+        vocab_count.update(q)
 
         max_context = max(max_context, len(context))
-        max_q = max(max_q, len(claim))
+        max_q = max(max_q, len(q))
 
     return vocab_count, (max_context + 1, max_q)
 
@@ -152,22 +155,26 @@ class Vocabulary:
         return emb
 
 def build_vocab(train, test, vocab_size):
-    train_test = deepcopy(train)
-    for k in train_test.keys():
-        train_test[k].extend(test[k])
-    vocab_count, pad_lens = count_vocab(train_test)
+    vocab_count, pad_lens = count_vocab(train + test)
     vocab = vocab_count.most_common()[:vocab_size]
     
     to_pos, to_ner = {}, {}
     to_pos['<PAD>'], to_pos['<UNK>'] = 0, 1
     to_ner['<PAD>'], to_ner['<UNK>'] = 0, 1
-    
-    for idx in range(len(train_test['ids'])):
-        for tag in train_test['c_poses'][idx] + train_test['h_poses'][idx]:
+    for x in train + test:
+        for tag in x['c_pos']:
+            if tag not in to_pos.keys():
+                to_pos[tag] = len(to_pos)
+
+        for tag in x['claim_pos']:
             if tag not in to_pos.keys():
                 to_pos[tag] = len(to_pos)
         
-        for tag in train_test['c_ners'][idx] + train_test['h_ners'][idx]:
+        for tag in x['c_ner']:
+            if tag not in to_ner.keys():
+                to_ner[tag] = len(to_ner)
+
+        for tag in x['claim_ner']:
             if tag not in to_ner.keys():
                 to_ner[tag] = len(to_ner)
     
@@ -221,13 +228,16 @@ class DataEngine(Dataset):
         context = torch.LongTensor(self.vocabulary.word2idx(context))
         context_pos = torch.LongTensor(self.vocabulary.pos2idx(context_pos))
         context_ner = torch.LongTensor(self.vocabulary.ner2idx(context_ner))
+        context_mask = torch.eq(context, 0)
+
         claim = torch.LongTensor(self.vocabulary.word2idx(claim))
         claim_pos = torch.LongTensor(self.vocabulary.pos2idx(claim_pos))
         claim_ner = torch.LongTensor(self.vocabulary.ner2idx(claim_ner))
+        claim_mask = torch.eq(claim, 0)
         appear = torch.FloatTensor(appear)
         label = torch.LongTensor([verdict2num[label]])
 
-        return id, context, context_pos, context_ner, claim, claim_pos, claim_ner, appear, label
+        return id, context, context_pos, context_ner, context_mask, claim, claim_pos, claim_ner, claim_mask, appear, label
     
 # if __name__ == "__main__":
 #     train = load_data('/kaggle/input/squad1k/train_squad.json', False)
