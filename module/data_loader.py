@@ -198,10 +198,10 @@ class DataEngine(Dataset):
     def __getitem__(self, idx):
         return self.vectorize(self.datas[idx]['id'],
                               self.datas[idx]['claim'],
-                              self.datas[idx]['h_pose'],
+                              self.datas[idx]['h_pos'],
                               self.datas[idx]['h_ner'],
                               self.datas[idx]['context'],
-                              self.datas[idx]['c_pose'],
+                              self.datas[idx]['c_pos'],
                               self.datas[idx]['c_ner'],
                               self.datas[idx]['appear'],
                               self.datas[idx]['verdict']

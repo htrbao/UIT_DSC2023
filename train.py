@@ -83,8 +83,34 @@ if __name__ == '__main__':
                        args.embedding_size)
     else:
         w2v = None
-    fusion_net = FusionNet(opt=args,
-                           embedding=e)
+
+    args = dict(
+        epoches = 20,
+        batch_size = 32,
+        grad_clipping = 10,
+        fix_embeddings = False,
+        tune_partial = 1000,
+
+        display_freq = 1000,
+
+        vocab_size = 25000,
+        embedding_dim = 300,
+        number_of_class = 3,
+        final_merge = 'linear_self_attn',
+        hidden_size = 125,
+        enc_rnn_layers = 2,
+        inf_rnn_layers = 2,
+        full_att_type = 2,
+        pos_size = 56,
+        pos_dim = 12,
+        ner_size = 19,
+        ner_dim = 8,
+        do_seq_dropout = True,
+        my_dropout_p = 0.3,
+        dropout_emb = 0.3,
+        dropout_EM = 0.6,
+    )
+    fusion_net = FusionNet(opt=args,)
 
     print("created netword...")
     
