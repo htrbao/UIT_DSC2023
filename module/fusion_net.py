@@ -148,14 +148,14 @@ class FusionNet(nn.Module):
         Prnn_input_list.append(x1_ner_emb)
         Hrnn_input_list.append(x2_ner_emb)
 
-        Prnn_input_list.append(appear.unsqueeze(-1))
-
         x1_input = torch.cat(Prnn_input_list, 2)
         x2_input = torch.cat(Hrnn_input_list, 2)
 
         # Now the features are ready
         # x1_input: [batch_size, doc_len, input_size]
         # x2_input: [batch_size, doc_len, input_size]
+
+        x1_f = appear.unsqueeze(-1)
 
         if self.opt['full_att_type'] == 2:
             x1_f = layers.dropout(x1_f, p=self.opt['dropout_EM'], training=self.training)
