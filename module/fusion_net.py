@@ -54,7 +54,7 @@ class FusionNet(nn.Module):
         print('Initially, the vector_size of Claim is {}'.format(H_cur_hidden_size))
 
         # RNN premise encoder
-        self.P_rnn = layers.RNNEncoder(P_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'])
+        self.P_rnn = layers.RNNEncoder(P_cur_hidden_size + 1, opt['hidden_size'], opt['enc_rnn_layers'])
         # RNN hypothesis encoder
         self.H_rnn = layers.RNNEncoder(H_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'])
         cur_hidden_size = opt['hidden_size'] * 2
