@@ -148,7 +148,7 @@ class FusionNet(nn.Module):
         Prnn_input_list.append(x1_ner_emb)
         Hrnn_input_list.append(x2_ner_emb)
 
-        Prnn_input_list.append(appear)
+        Prnn_input_list.append(appear.unsqueeze(-1))
 
         x1_input = torch.cat(Prnn_input_list, 2)
         x2_input = torch.cat(Hrnn_input_list, 2)
