@@ -46,8 +46,6 @@ class FusionNet(nn.Module):
         P_input_size += opt['ner_dim']
         H_input_size += opt['ner_dim']
 
-        P_input_size += 1
-
         # Setup the vector size for [premise, hypothesis]
         # they will be modified in the following code
         P_cur_hidden_size = P_input_size
