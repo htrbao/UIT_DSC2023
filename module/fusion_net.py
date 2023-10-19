@@ -106,7 +106,7 @@ class FusionNet(nn.Module):
         # Store config
         self.opt = opt
 
-    def forward(self, x1, x1_pos, x1_ner, x1_mask, x2, x2_pos, x2_ner, x2_mask, appear):
+    def forward(self, x1, x1_id, x1_pos, x1_ner, x1_mask, x2, x2_id, x2_pos, x2_ner, x2_mask, appear):
         """Inputs:
         x1 = premise word indices                [batch * len_1]
         x1_f = premise word features indices     [batch * len_1 * nfeat]
