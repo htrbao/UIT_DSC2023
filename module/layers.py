@@ -47,8 +47,7 @@ class phoBertExtractor(nn.Module):
 
     def forward(self, x_ids):
         features = self.phobert(x_ids)['last_hidden_state']
-        print(features[:,1:,:].shape)
-        return features[:,1:,:]
+        return features
 
 class RNNEncoder(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, rnn_type=nn.LSTM, aux_size=0):
