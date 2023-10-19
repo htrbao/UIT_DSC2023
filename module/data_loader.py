@@ -6,6 +6,7 @@ from torch.utils.data import Dataset
 from collections import Counter
 from tqdm import tqdm
 from copy import deepcopy
+from transformers import AutoTokenizer
 
 
 PAD = 0
@@ -121,25 +122,25 @@ class Vocabulary:
         idxs = []
         for word in words:
             word = word.lower()
-            idxs.append(self.to_idx['<UNK>'] if word not in self.to_idx.keys() else self.to_idx[word])
+            idxs.append(self.to_idx['<unk>'] if word not in self.to_idx.keys() else self.to_idx[word])
         return idxs
     
     def pos2idx(self, pos):
         idxs = []
         for tag in pos:
-            idxs.append(self.to_pos['<UNK>'] if tag not in self.to_pos.keys() else self.to_pos[tag])
+            idxs.append(self.to_pos['<unk>'] if tag not in self.to_pos.keys() else self.to_pos[tag])
         return idxs
     
     def ner2idx(self, ner):
         idxs = []
         for tag in ner:
-            idxs.append(self.to_ner['<UNK>'] if tag not in self.to_ner.keys() else self.to_ner[tag])
+            idxs.append(self.to_ner['<unk>'] if tag not in self.to_ner.keys() else self.to_ner[tag])
         return idxs
     
     def build_embedding(self, embed_file, wv_dim):
         vocab_size = self.__len__()
         emb = np.random.uniform(-1, 1, (vocab_size, wv_dim))
-        emb[0] = 0 # <PAD> should be all 0 (using broadcast)
+        emb[0] = 0 # <pad> should be all 0 (using broadcast)
     
         cnt = 0
         
@@ -160,8 +161,8 @@ def build_vocab(train, test, vocab_size):
     vocab = vocab_count.most_common()[:vocab_size]
     
     to_pos, to_ner = {}, {}
-    to_pos['<PAD>'], to_pos['<UNK>'] = 0, 1
-    to_ner['<PAD>'], to_ner['<UNK>'] = 0, 1
+    to_pos['<pad>'], to_pos['<unk>'] = 0, 1
+    to_ner['<pad>'], to_ner['<unk>'] = 0, 1
     for x in train + test:
         for tag in x['c_pos']:
             if tag not in to_pos.keys():
@@ -180,8 +181,8 @@ def build_vocab(train, test, vocab_size):
                 to_ner[tag] = len(to_ner)
     
     to_word, to_idx = {}, {}
-    to_word[0], to_idx['<PAD>'] = '<PAD>', 0
-    to_word[1], to_idx['<UNK>'] = '<UNK>', 1
+    to_word[0], to_idx['<pad>'] = '<pad>', 0
+    to_word[1], to_idx['<unk>'] = '<unk>', 1
     for w, c in vocab:
         to_word[len(to_word)] = w
         to_idx[w] = len(to_idx)
@@ -192,6 +193,8 @@ class DataEngine(Dataset):
         self.datas = datas
         self.vocabulary = vocabulary
         self.pad_context, self.pad_q = pad_lens
+        self.tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base-v2")
+
         
     def __len__(self):
         return len(self.datas)
@@ -213,32 +216,44 @@ class DataEngine(Dataset):
                               
 
     def vectorize(self, id, claim, h_pos, h_ner, context, c_pos, c_ner, appear, label):
-        padding_context = ['<PAD>' for _ in range(self.pad_context - len(context))]
+        padding_context = ['<pad>' for _ in range(self.pad_context - len(context))]
         context = context + padding_context
         context_pos = c_pos + padding_context
         context_ner = c_ner + padding_context
+        context_id = self.tokenizer.encode(self.process_for_phobert(context))
 
-        padding_claim = ['<PAD>' for _ in range(self.pad_q - len(claim))]
+        padding_claim = ['<pad>' for _ in range(self.pad_q - len(claim))]
         claim = claim + padding_claim
         claim_pos = h_pos + padding_claim
         claim_ner = h_ner + padding_claim
+        claim_id = [self.tokenizer.encode(self.process_for_phobert(claim))]
 
         padding_appear = [0 for _ in range(self.pad_context - len(appear))]
         appear = appear + padding_appear
 
         context = torch.LongTensor(self.vocabulary.word2idx(context))
+        context_id = torch.FloatTensor(context_id)
         context_pos = torch.LongTensor(self.vocabulary.pos2idx(context_pos))
         context_ner = torch.LongTensor(self.vocabulary.ner2idx(context_ner))
         context_mask = torch.eq(context, 0)
 
         claim = torch.LongTensor(self.vocabulary.word2idx(claim))
+        claim_id = torch.FloatTensor(claim_id)
         claim_pos = torch.LongTensor(self.vocabulary.pos2idx(claim_pos))
         claim_ner = torch.LongTensor(self.vocabulary.ner2idx(claim_ner))
         claim_mask = torch.eq(claim, 0)
+
         appear = torch.FloatTensor(appear)
         label = torch.LongTensor([verdict2num[label]])
 
-        return id, context, context_pos, context_ner, context_mask, claim, claim_pos, claim_ner, claim_mask, appear, label
+        return id, context, context_id, context_pos, context_ner, context_mask, claim, claim_id, claim_pos, claim_ner, claim_mask, appear, label
+    
+    def process_for_phobert(sentence: list[str]):
+        for i in range(len(sentence)):
+            sentence[i] = sentence[i].replace(' ', '_')
+
+        return " ".join(sentence)
+
     
 # if __name__ == "__main__":
 #     train = load_data('/kaggle/input/squad1k/train_squad.json', False)

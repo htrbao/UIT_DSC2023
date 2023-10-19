@@ -37,6 +37,9 @@ class FusionNet(nn.Module):
         H_input_size += embedding_dim
         # Contextualized embeddings
         # input_size += self.CoVe.output_size
+        self.phoBert = layers.phoBertExtractor()
+        P_input_size += self.phoBert.output_size
+        H_input_size += self.phoBert.output_size
         # POS embeddings
         self.pos_embedding = nn.Embedding(opt['pos_size'], opt['pos_dim'])
         P_input_size += opt['pos_dim']
@@ -131,13 +134,13 @@ class FusionNet(nn.Module):
         Hrnn_input_list.append(x2_emb)
 
         # # Contextualized embeddings
-        # _, x1_cove = self.CoVe(x1, x1_mask)
-        # _, x2_cove = self.CoVe(x2, x2_mask)
-        # if self.opt['dropout_emb'] > 0:
-        #     x1_cove = layers.dropout(x1_cove, p=self.opt['dropout_emb'], training=self.training)
-        #     x2_cove = layers.dropout(x2_cove, p=self.opt['dropout_emb'], training=self.training)
-        # Prnn_input_list.append(x1_cove)
-        # Hrnn_input_list.append(x2_cove)
+        x1_cove = self.phoBert(x1)
+        x2_cove = self.phoBert(x2)
+        if self.opt['dropout_emb'] > 0:
+            x1_cove = layers.dropout(x1_cove, p=self.opt['dropout_emb'], training=self.training)
+            x2_cove = layers.dropout(x2_cove, p=self.opt['dropout_emb'], training=self.training)
+        Prnn_input_list.append(x1_cove)
+        Hrnn_input_list.append(x2_cove)
 
         # POS embeddings
         x1_pos_emb = self.pos_embedding(x1_pos)

@@ -7,6 +7,7 @@ from torch.autograd import Variable
 from torch.nn.parameter import Parameter
 from torch.nn.utils.rnn import pad_packed_sequence as unpack
 from torch.nn.utils.rnn import pack_padded_sequence as pack
+from transformers import AutoModel
 
 # ------------------------------------------------------------------------------
 # Neural Modules
@@ -37,6 +38,16 @@ def dropout(x, p=0, training=False):
         return seq_dropout(x, p=p, training=training)
     else:
         return F.dropout(x, p=p, training=training)
+    
+class phoBertExtractor(nn.Module):
+    def __init__(self):
+        self.output_size = 768
+        self.phobert = AutoModel.from_pretrained("vinai/phobert-base-v2")
+
+    def forward(self, x_ids):
+        batch_size, seq_len = x_ids.shape[0], x_ids.shape[1]
+        features = self.phobert(x_ids)['last_hidden_state']
+        return features[:,1:seq_len,:]
 
 class RNNEncoder(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers, rnn_type=nn.LSTM, aux_size=0):
