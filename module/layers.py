@@ -46,8 +46,8 @@ class phoBertExtractor(nn.Module):
         self.phobert = AutoModel.from_pretrained("vinai/phobert-base-v2")
 
     def forward(self, x_ids):
-        batch_size, seq_len = x_ids.shape[0], x_ids.shape[1]
         features = self.phobert(x_ids)['last_hidden_state']
+        print(features[:,1:,:].shape)
         return features[:,1:,:]
 
 class RNNEncoder(nn.Module):
