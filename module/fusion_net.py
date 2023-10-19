@@ -38,6 +38,8 @@ class FusionNet(nn.Module):
         # Contextualized embeddings
         # input_size += self.CoVe.output_size
         self.phoBert = layers.phoBertExtractor()
+        for p_ in self.phoBert.parameters():
+            p_.requires_grad = False
         P_input_size += self.phoBert.output_size
         H_input_size += self.phoBert.output_size
         # POS embeddings
