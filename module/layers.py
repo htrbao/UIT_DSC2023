@@ -41,6 +41,7 @@ def dropout(x, p=0, training=False):
     
 class phoBertExtractor(nn.Module):
     def __init__(self):
+        super(phoBertExtractor, self).__init__()
         self.output_size = 768
         self.phobert = AutoModel.from_pretrained("vinai/phobert-base-v2")
 
