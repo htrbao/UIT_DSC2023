@@ -226,7 +226,7 @@ class DataEngine(Dataset):
         claim = claim + padding_claim
         claim_pos = h_pos + padding_claim
         claim_ner = h_ner + padding_claim
-        claim_id = [self.tokenizer.encode(self.process_for_phobert(claim))][:103]
+        claim_id = self.tokenizer.encode(self.process_for_phobert(claim))[:103]
 
         padding_appear = [0 for _ in range(self.pad_context - len(appear))]
         appear = appear + padding_appear
