@@ -248,7 +248,7 @@ class DataEngine(Dataset):
 
         return id, context, context_id, context_pos, context_ner, context_mask, claim, claim_id, claim_pos, claim_ner, claim_mask, appear, label
     
-    def process_for_phobert(sentence: list[str]):
+    def process_for_phobert(self, sentence: list[str]):
         for i in range(len(sentence)):
             sentence[i] = sentence[i].replace(' ', '_')
 
