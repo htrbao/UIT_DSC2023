@@ -221,12 +221,16 @@ class DataEngine(Dataset):
         context_pos = c_pos + padding_context
         context_ner = c_ner + padding_context
         context_id = self.tokenizer.encode(self.process_for_phobert(context))[:160]
+        while len(context_id) < 160:
+            context_id.append(0)
 
         padding_claim = ['<pad>' for _ in range(self.pad_q - len(claim))]
         claim = claim + padding_claim
         claim_pos = h_pos + padding_claim
         claim_ner = h_ner + padding_claim
         claim_id = self.tokenizer.encode(self.process_for_phobert(claim))[:103]
+        while len(claim_id) < 103:
+            claim_id.append(0)
 
         padding_appear = [0 for _ in range(self.pad_context - len(appear))]
         appear = appear + padding_appear
