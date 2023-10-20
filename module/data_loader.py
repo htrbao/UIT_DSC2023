@@ -213,7 +213,7 @@ class DataEngine(Dataset):
                               self.datas[idx]['claim_pos'],
                               self.datas[idx]['claim_ner'],
                               self.datas[idx]['c_document'],
-                              self.datas[idx]['context_f'],
+                              self.datas[idx]['c_f'],
                               self.datas[idx]['c_pos'],
                               self.datas[idx]['c_ner'],
                               self.datas[idx]['label']
