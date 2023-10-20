@@ -254,10 +254,9 @@ class DataEngine(Dataset):
         claim_ner = torch.LongTensor(self.vocabulary.ner2idx(claim_ner))
         claim_mask = torch.eq(claim, 0)
 
-        appear = torch.FloatTensor(appear)
         label = torch.LongTensor([verdict2num[label]])
 
-        return id, context, context_f, context_pos, context_ner, context_mask, claim, claim_f, claim_pos, claim_ner, claim_mask, appear, label
+        return id, context, context_f, context_pos, context_ner, context_mask, claim, claim_f, claim_pos, claim_ner, claim_mask, label
     
     def process_for_phobert(self, sentence: list[str]):
         for i in range(len(sentence)):
