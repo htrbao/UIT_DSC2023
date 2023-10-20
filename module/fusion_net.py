@@ -175,7 +175,7 @@ class FusionNet(nn.Module):
         # Encode premise with RNN
         P_abstr_ls = self.P_rnn(x1_input, x1_mask, aux_input=Paux_input)
         # Encode hypothesis with RNN
-        H_abstr_ls = self.H_rnn(x2_input, x2_mask, aux_input=None)
+        H_abstr_ls = self.H_rnn(x2_input, x2_mask, aux_input=Haux_input)
 
         # Fusion
         if self.opt['full_att_type'] == 0:
