@@ -240,7 +240,7 @@ class DataEngine(Dataset):
         # claim_id = self.tokenizer.encode(self.process_for_phobert(claim))[:103]
         # while len(claim_id) < 103:
         #     claim_id.append(0)
-        h_f = h_f + [0 for _ in range(self.pad_q - len(appear))]
+        h_f = h_f + [0 for _ in range(self.pad_q - len(h_f))]
 
         context = torch.LongTensor(self.vocabulary.word2idx(context))
         context_f = torch.FloatTensor(c_f)
