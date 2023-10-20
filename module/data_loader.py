@@ -32,13 +32,21 @@ def load_data(file_name):
 
         context = data_item['c_document']
         claim = data_item['claim']
-        appear = []
+        context_f = []
         for w in context:
             if w in claim:
-                appear.append(1)
+                context_f.append(1)
             else:
-                appear.append(0)
-        data_item['appear'] = deepcopy(appear)
+                context_f.append(0)
+        data_item['c_f'] = deepcopy(context_f)
+
+        claim_f = []
+        for w in claim:
+            if w in context:
+                claim_f.append(1)
+            else:
+                claim_f.append(0)
+        data_item['claim_f'] = deepcopy(claim_f)
 
         examples.append(data_item)
     return examples
@@ -202,12 +210,13 @@ class DataEngine(Dataset):
     def __getitem__(self, idx):
         return self.vectorize(self.datas[idx]['id'],
                               self.datas[idx]['claim'],
+                              self.datas[idx]['claim_f'],
                               self.datas[idx]['claim_pos'],
                               self.datas[idx]['claim_ner'],
                               self.datas[idx]['c_document'],
+                              self.datas[idx]['context_f'],
                               self.datas[idx]['c_pos'],
                               self.datas[idx]['c_ner'],
-                              self.datas[idx]['appear'],
                               self.datas[idx]['label']
                               )
                               # '''-1 if len(self.datas[idx]['answers']) == 0 else '''
@@ -215,34 +224,33 @@ class DataEngine(Dataset):
                               # '''-1 if len(self.datas[idx]['answers']) == 0 else '''
                               
 
-    def vectorize(self, id, claim, h_pos, h_ner, context, c_pos, c_ner, appear, label):
+    def vectorize(self, id, claim, h_f, h_pos, h_ner, context, c_f, c_pos, c_ner, label):
         padding_context = ['<pad>' for _ in range(self.pad_context - len(context))]
         context = context + padding_context
         context_pos = c_pos + padding_context
         context_ner = c_ner + padding_context
-        context_id = self.tokenizer.encode(self.process_for_phobert(context))[:160]
-        while len(context_id) < 160:
-            context_id.append(0)
+        c_f = c_f + [0 for _ in range(self.pad_context - len(c_f))]
+        # context_id = self.tokenizer.encode(self.process_for_phobert(context))[:160]
+        # while len(context_id) < 160:
+        #     context_id.append(0)
 
         padding_claim = ['<pad>' for _ in range(self.pad_q - len(claim))]
         claim = claim + padding_claim
         claim_pos = h_pos + padding_claim
         claim_ner = h_ner + padding_claim
-        claim_id = self.tokenizer.encode(self.process_for_phobert(claim))[:103]
-        while len(claim_id) < 103:
-            claim_id.append(0)
-
-        padding_appear = [0 for _ in range(self.pad_context - len(appear))]
-        appear = appear + padding_appear
+        # claim_id = self.tokenizer.encode(self.process_for_phobert(claim))[:103]
+        # while len(claim_id) < 103:
+        #     claim_id.append(0)
+        h_f = h_f + [0 for _ in range(self.pad_q - len(appear))]
 
         context = torch.LongTensor(self.vocabulary.word2idx(context))
-        context_id = torch.FloatTensor(context_id)
+        context_f = torch.FloatTensor(c_f)
         context_pos = torch.LongTensor(self.vocabulary.pos2idx(context_pos))
         context_ner = torch.LongTensor(self.vocabulary.ner2idx(context_ner))
         context_mask = torch.eq(context, 0)
 
         claim = torch.LongTensor(self.vocabulary.word2idx(claim))
-        claim_id = torch.FloatTensor(claim_id)
+        claim_f = torch.FloatTensor(h_f)
         claim_pos = torch.LongTensor(self.vocabulary.pos2idx(claim_pos))
         claim_ner = torch.LongTensor(self.vocabulary.ner2idx(claim_ner))
         claim_mask = torch.eq(claim, 0)
@@ -250,7 +258,7 @@ class DataEngine(Dataset):
         appear = torch.FloatTensor(appear)
         label = torch.LongTensor([verdict2num[label]])
 
-        return id, context, context_id, context_pos, context_ner, context_mask, claim, claim_id, claim_pos, claim_ner, claim_mask, appear, label
+        return id, context, context_f, context_pos, context_ner, context_mask, claim, claim_f, claim_pos, claim_ner, claim_mask, appear, label
     
     def process_for_phobert(self, sentence: list[str]):
         for i in range(len(sentence)):

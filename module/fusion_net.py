@@ -37,11 +37,11 @@ class FusionNet(nn.Module):
         H_input_size += embedding_dim
         # Contextualized embeddings
         # input_size += self.CoVe.output_size
-        self.phoBert = layers.phoBertExtractor()
-        for p_ in self.phoBert.parameters():
-            p_.requires_grad = False
-        P_input_size += self.phoBert.output_size
-        H_input_size += self.phoBert.output_size
+        # self.phoBert = layers.phoBertExtractor()
+        # for p_ in self.phoBert.parameters():
+        #     p_.requires_grad = False
+        # P_input_size += self.phoBert.output_size
+        # H_input_size += self.phoBert.output_size
         # POS embeddings
         self.pos_embedding = nn.Embedding(opt['pos_size'], opt['pos_dim'])
         P_input_size += opt['pos_dim']
@@ -61,12 +61,12 @@ class FusionNet(nn.Module):
         P_cur_hidden_size = P_input_size
         H_cur_hidden_size = H_input_size
         print('Initially, the vector_size of Context is {} (+ {})'.format(P_cur_hidden_size, aux_input))
-        print('Initially, the vector_size of Claim is {} (+ {})'.format(H_cur_hidden_size, 0))
+        print('Initially, the vector_size of Claim is {} (+ {})'.format(H_cur_hidden_size, aux_input))
 
         # RNN premise encoder
         self.P_rnn = layers.RNNEncoder(P_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'], aux_size = aux_input)
         # RNN hypothesis encoder
-        self.H_rnn = layers.RNNEncoder(H_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'])
+        self.H_rnn = layers.RNNEncoder(H_cur_hidden_size, opt['hidden_size'], opt['enc_rnn_layers'], aux_size = aux_input)
         cur_hidden_size = opt['hidden_size'] * 2
 
         # Output sizes of rnn encoders
@@ -108,7 +108,7 @@ class FusionNet(nn.Module):
         # Store config
         self.opt = opt
 
-    def forward(self, x1, x1_id, x1_pos, x1_ner, x1_mask, x2, x2_id, x2_pos, x2_ner, x2_mask, appear):
+    def forward(self, x1, x1_f, x1_pos, x1_ner, x1_mask, x2, x2_f, x2_pos, x2_ner, x2_mask):
         """Inputs:
         x1 = premise word indices                [batch * len_1]
         x1_f = premise word features indices     [batch * len_1 * nfeat]
@@ -135,14 +135,14 @@ class FusionNet(nn.Module):
         Prnn_input_list.append(x1_emb)
         Hrnn_input_list.append(x2_emb)
 
-        # # Contextualized embeddings
-        x1_cove = self.phoBert(x1)
-        x2_cove = self.phoBert(x2)
-        if self.opt['dropout_emb'] > 0:
-            x1_cove = layers.dropout(x1_cove, p=self.opt['dropout_emb'], training=self.training)
-            x2_cove = layers.dropout(x2_cove, p=self.opt['dropout_emb'], training=self.training)
-        Prnn_input_list.append(x1_cove)
-        Hrnn_input_list.append(x2_cove)
+        # # # Contextualized embeddings
+        # x1_cove = self.phoBert(x1)
+        # x2_cove = self.phoBert(x2)
+        # if self.opt['dropout_emb'] > 0:
+        #     x1_cove = layers.dropout(x1_cove, p=self.opt['dropout_emb'], training=self.training)
+        #     x2_cove = layers.dropout(x2_cove, p=self.opt['dropout_emb'], training=self.training)
+        # Prnn_input_list.append(x1_cove)
+        # Hrnn_input_list.append(x2_cove)
 
         # POS embeddings
         x1_pos_emb = self.pos_embedding(x1_pos)
@@ -163,16 +163,14 @@ class FusionNet(nn.Module):
         # x1_input: [batch_size, doc_len, input_size]
         # x2_input: [batch_size, doc_len, input_size]
 
-        x1_f = appear.unsqueeze(-1)
-
         if self.opt['full_att_type'] == 2:
             x1_f = layers.dropout(x1_f, p=self.opt['dropout_EM'], training=self.training)
-            # x2_f = layers.dropout(x2_f, p=self.opt['dropout_EM'], training=self.training)
-            # Paux_input, Haux_input = x1_f, x2_f
-            Paux_input = x1_f
+            x2_f = layers.dropout(x2_f, p=self.opt['dropout_EM'], training=self.training)
+            Paux_input, Haux_input = x1_f, x2_f
+            # Paux_input = x1_f
         else:
             Paux_input = x1_f[:, :, 0].contiguous().view(x1_f.size(0), x1_f.size(1), 1)
-            # Haux_input = x2_f[:, :, 0].contiguous().view(x2_f.size(0), x2_f.size(1), 1)
+            Haux_input = x2_f[:, :, 0].contiguous().view(x2_f.size(0), x2_f.size(1), 1)
 
         # Encode premise with RNN
         P_abstr_ls = self.P_rnn(x1_input, x1_mask, aux_input=Paux_input)
