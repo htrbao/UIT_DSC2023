@@ -201,7 +201,6 @@ class DataEngine(Dataset):
         self.datas = datas
         self.vocabulary = vocabulary
         self.pad_context, self.pad_q = pad_lens
-        self.tokenizer = AutoTokenizer.from_pretrained("vinai/phobert-base-v2")
 
         
     def __len__(self):
