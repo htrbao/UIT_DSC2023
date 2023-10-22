@@ -254,7 +254,7 @@ class DataEngine_E_NE(Dataset):
         claim_ner = torch.LongTensor(self.vocabulary.ner2idx(claim_ner))
         claim_mask = torch.eq(claim, 0)
 
-        label = torch.LongTensor([0 if verdict2num[label] < 2 else 1])
+        label = torch.FloatTensor([0 if verdict2num[label] < 2 else 1])
 
         return id, context, context_f, context_pos, context_ner, context_mask, claim, claim_f, claim_pos, claim_ner, claim_mask, label
     
