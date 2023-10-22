@@ -230,7 +230,6 @@ class MLPFunc(nn.Module):
     def __init__(self, input_size, hidden_size, num_class):
         super(MLPFunc, self).__init__()
         self.linear = nn.Linear(input_size, hidden_size)
-        self.linear_ = nn.Linear(hidden_size, hidden_size)
         self.linear_final = nn.Linear(hidden_size, num_class, bias=False)
 
     def forward(self, x):
@@ -240,8 +239,7 @@ class MLPFunc(nn.Module):
         x = dropout(x, p=my_dropout_p, training=self.training)
         h = F.tanh(self.linear(x))
         h = dropout(h, p=my_dropout_p, training=self.training)
-        h_ = F.tanh(self.linear_(h))
-        o = self.linear_final(h_)
+        o = self.linear_final(h)
         return o # batch * num_classes
 
 # ------------------------------------------------------------------------------
